@@ -1,0 +1,7 @@
+build/main
+assembly/
+generated.asm
+generated
+*.o
+*.asm
+./DS_Store
