@@ -12,3 +12,7 @@ Dependencies: gcc, nasm
 ./build.sh
 ./build/unn <filename> <output_filename>
 ``` -->
+
+# internal 
+
+![flow](assets/flow.png)
