@@ -8,7 +8,7 @@ Quick Start:
 
 Dependencies: gcc, nasm
 
-```
+<!-- ```
 ./build.sh
 ./build/unn <filename> <output_filename>
-```
+``` -->
