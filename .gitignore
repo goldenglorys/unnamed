@@ -5,3 +5,4 @@ generated
 *.o
 *.asm
 ./DS_Store
+main
