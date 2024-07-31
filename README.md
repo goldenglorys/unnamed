@@ -23,4 +23,5 @@ Dependencies: gcc, nasm
 Join me on this wild ride as I attempt to build a compiler from scratch. Here are the steps I've taken so far:
 
 1. [The First Step: The Janky Lexer](assets/journey/step1_janky_lexer.md)
-2. ... (more steps to come)
+2. [The Second Step: The Janky Lexer](assets/journey/step2_janky_lexer.md)
+3. ... (more steps to come)
