@@ -37,9 +37,3 @@ So there you have it. The first step of my janky lexer journey. It's not much, b
 Happy coding, fellow strugglers! 🚀💻😵‍💫
 
 ---
-
-This note should give you a good starting point for documenting your journey. Don't forget to update your README file with links to each step as you go along. Good luck, and remember - we all start somewhere! 💪
-
-
-
-

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 
+// Enum to represent different types of tokens
 typedef enum
 {
     INT,
@@ -11,12 +12,17 @@ typedef enum
     END_OF_TOKENS,
 } TokenType;
 
+// Struct to represent a token
 typedef struct
 {
     TokenType type;
     char *value;
 } Token;
 
+/**
+ * Prints the value and type of a token.
+ * @param token The token to print.
+ */
 void print_token(Token token)
 {
     printf("TOKEN VALUE: ");
@@ -38,6 +44,12 @@ void print_token(Token token)
     }
 }
 
+/**
+ * Generates a number token from the current input string.
+ * @param current The input string.
+ * @param current_index Pointer to the current index in the input string.
+ * @return A pointer to the generated number token.
+ */
 Token *generate_number(char *current, int *current_index)
 {
     Token *token = malloc(sizeof(Token));
@@ -62,6 +74,12 @@ Token *generate_number(char *current, int *current_index)
     return token;
 }
 
+/**
+ * Generates a keyword token from the current input string.
+ * @param current The input string.
+ * @param current_index Pointer to the current index in the input string.
+ * @return A pointer to the generated keyword token.
+ */
 Token *generate_keyword(char *current, int *current_index)
 {
     Token *token = malloc(sizeof(Token));
@@ -84,6 +102,11 @@ Token *generate_keyword(char *current, int *current_index)
 
 size_t tokens_index;
 
+/**
+ * Main lexer function that reads a file and tokenizes its content.
+ * @param file The input file.
+ * @return A pointer to the array of generated tokens.
+ */
 Token *lexer(FILE *file)
 {
     int length;
