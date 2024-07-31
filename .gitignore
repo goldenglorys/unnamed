@@ -6,3 +6,4 @@ generated
 *.asm
 ./DS_Store
 main
+build/

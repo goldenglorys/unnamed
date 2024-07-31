@@ -1,5 +1,5 @@
 #ifndef LEXER_H_
-#define LEXER_H
+#define LEXER_H_
 
 // Enum to represent different types of tokens
 typedef enum

@@ -1,1 +1,1 @@
-gcc main.c lexerf.c -o build/main -Wall -Wextra
+clang main.c lexerf.c -o build/main -Wall -Wextra -Wpedantic -fsanitize=address -fsanitize=undefined
