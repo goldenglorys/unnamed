@@ -26,6 +26,7 @@ Token *generate_number(char *current, int *current_index);
 // Function to generate a keyword token
 Token *generate_keyword(char *current, int *current_index);
 
+// Function to generate a separator token
 Token *generate_separator(char *current, int *current_index);
 
 // Main lexer function

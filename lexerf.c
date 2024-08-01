@@ -26,10 +26,12 @@ typedef struct
 void print_token(Token token)
 {
     printf("TOKEN VALUE: ");
+    printf("'");
     for (int i = 0; token.value[i] != '\0'; i++)
     {
         printf("%c", token.value[i]);
     }
+    printf("'");
     switch (token.type)
     {
     case INT:
@@ -101,6 +103,12 @@ Token *generate_keyword(char *current, int *current_index)
     return token;
 }
 
+/**
+ * Generates a separator token from the current input string.
+ * @param current The input string.
+ * @param current_index Pointer to the current index in the input string.
+ * @return A pointer to the generated separator token.
+ */
 Token *generate_separator(char *current, int *current_index)
 {
     Token *token = malloc(sizeof(Token));
@@ -140,30 +148,27 @@ Token *lexer(FILE *file)
         if (current[current_index] == ';' || current[current_index] == '(' || current[current_index] == ')')
         {
             token = generate_separator(current, &current_index);
+            tokens[tokens_index] = *token;
+            tokens_index++;
         }
         else if (isdigit(current[current_index]))
         {
             token = generate_number(current, &current_index);
             printf("TOKEN VALUE: %s\n", token->value);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+            current_index--;
         }
         else if (isalpha(current[current_index]))
         {
             token = generate_keyword(current, &current_index);
             printf("TOKEN KEYWORD: %s\n", token->value);
-        }
-        else
-        {
-            current_index++;
-            continue;
-        }
-
-        if (token != NULL)
-        {
             tokens[tokens_index] = *token;
             tokens_index++;
-            free(token);
-            current_index++;
+            current_index--;
         }
+        free(token);
+        current_index++;
     }
 
     tokens[tokens_index].value = strdup("\0");
