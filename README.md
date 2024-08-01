@@ -25,4 +25,5 @@ Join me on this wild ride as I attempt to build a compiler from scratch. Here ar
 1. [The First Step: The Janky Lexer](assets/journey/step1_janky_lexer.md)
 2. [The Second Step: The Janky Lexer](assets/journey/step2_janky_lexer.md)
 3. Implemented the Parser..not quiet there yet but on-track.
-4. ... (more steps to come)
+4. The parser works at least..not easy ngl!!
+x. ... (more steps to come)
