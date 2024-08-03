@@ -18,6 +18,9 @@ Dependencies: gcc, nasm
 
 ![flow](assets/flow.png)
 
+![depth flow](assets/depth_flow.png)
+
+
 # Compiler Journey
 
 Join me on this wild ride as I attempt to build a compiler from scratch. Here are the steps I've taken so far:
