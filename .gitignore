@@ -2,7 +2,7 @@ build/main
 generated.asm
 generated
 *.o
-*.asm
+# *.asm
 ./DS_Store
 main
 build/
