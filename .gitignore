@@ -1,5 +1,4 @@
 build/main
-assembly/
 generated.asm
 generated
 *.o
@@ -7,3 +6,4 @@ generated
 ./DS_Store
 main
 build/
+HelloWorld
