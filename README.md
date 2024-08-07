@@ -33,4 +33,5 @@ Join me on this wild ride as I attempt to build a compiler from scratch. Here ar
 4. The parser works at least..not easy ngl!!
 5. Moving on to the code gen part, but had to first figure out assembly code -> linker to executable so spent couple hours (days) trying many stuff out until it works yay!..moving on now to the code gen..
 6. Implemented the code gen basically..currently can fully compile an exit syscall (using arm64 architecture)..
-6. ... (more steps to come)
+7. Implemented arithmetic operation (addition and subtraction) into the codegen..
+8. ... (more steps to come)
