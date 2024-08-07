@@ -6,6 +6,7 @@
 
 #include "lexerf.h"
 #include "parserf.h"
+#include "./hashmap/hashmap.h"
 
 void traverse_tree(Node *node, int is_left, FILE *file)
 {
@@ -22,27 +23,25 @@ void traverse_tree(Node *node, int is_left, FILE *file)
 
     if (node->type == OPERATOR)
     {
-        if (strcmp(node->value, "+") == 0)
+        fprintf(file, "  ldr x0, =%s\n", node->left->value);
+        Node *tmp = node;
+        while (tmp->right->type == OPERATOR)
         {
-            fprintf(file, "  ldr x0, =%s\n", node->left->value);  // Load left value into x0
-            fprintf(file, "  ldr x1, =%s\n", node->right->value); // Load right value into x1
-            fprintf(file, "  add x0, x0, x1\n");                  // Add x1 to x0
-            node->left = NULL;
-            node->right = NULL;
+            printf("DEBUG: %s\n", tmp->right->value);
+            char *oper = search(tmp->value[0])->data;
+            tmp = tmp->right;
+            fprintf(file, "  ldr x1, =%s\n", tmp->left->value);
+            fprintf(file, "  %s x0, x0, x1\n", oper);
         }
-        else if (strcmp(node->value, "-") == 0)
-        {
-            fprintf(file, "  ldr x0, =%s\n", node->left->value);  // Load left value into x0
-            fprintf(file, "  ldr x1, =%s\n", node->right->value); // Load right value into x1
-            fprintf(file, "  sub x0, x0, x1\n");                  // Subtract x1 from x0
-            node->left = NULL;
-            node->right = NULL;
-        }
+        fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
+        fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
+        node->left = NULL;
+        node->right = NULL;
     }
     if (node->type == INT)
     {
         // Move integer value into x0 for the syscall
-        fprintf(file, "    mov x0, %s\n", node->value); // Assuming node->value is a string representation of the integer
+        fprintf(file, "    mov x0, %s\n", node->value);
     }
 
     if (strcmp(node->value, ";") == 0)
@@ -65,6 +64,8 @@ void traverse_tree(Node *node, int is_left, FILE *file)
 
 int generate_code(Node *root)
 {
+    insert('-', "sub");
+    insert('+', "add");
     FILE *file = fopen("generated.asm", "w");
     assert(file != NULL && "FILE COULD NOT BE OPENED\n");
 
