@@ -9,9 +9,6 @@ typedef enum
   KEYWORD,
   SEPARATOR,
   OPERATOR,
-  IDENTIFIER,
-  STRING,
-  COMP,
   END_OF_TOKENS,
 } TokenType;
 
@@ -20,7 +17,6 @@ typedef struct
 {
   TokenType type;
   char *value;
-  size_t line_num;
 } Token;
 
 // Function to print a token
@@ -33,7 +29,7 @@ Token *generate_number(char *current, int *current_index);
 Token *generate_keyword(char *current, int *current_index);
 
 // Function to generate a separator token
-Token *generate_separator_or_operator(char *current, int *current_index);
+Token *generate_separator_or_operator(char *current, int *current_index, TokenType type);
 
 // Main lexer function
 Token *lexer(FILE *file);

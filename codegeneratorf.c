@@ -20,6 +20,25 @@ void traverse_tree(Node *node, int is_left, FILE *file)
         fprintf(file, "    mov x16, #0x1\n"); // Exit syscall number for ARM
     }
 
+    if (node->type == OPERATOR)
+    {
+        if (strcmp(node->value, "+") == 0)
+        {
+            fprintf(file, "  ldr x0, =%s\n", node->left->value);  // Load left value into x0
+            fprintf(file, "  ldr x1, =%s\n", node->right->value); // Load right value into x1
+            fprintf(file, "  add x0, x0, x1\n");                  // Add x1 to x0
+            node->left = NULL;
+            node->right = NULL;
+        }
+        else if (strcmp(node->value, "-") == 0)
+        {
+            fprintf(file, "  ldr x0, =%s\n", node->left->value);  // Load left value into x0
+            fprintf(file, "  ldr x1, =%s\n", node->right->value); // Load right value into x1
+            fprintf(file, "  sub x0, x0, x1\n");                  // Subtract x1 from x0
+            node->left = NULL;
+            node->right = NULL;
+        }
+    }
     if (node->type == INT)
     {
         // Move integer value into x0 for the syscall
