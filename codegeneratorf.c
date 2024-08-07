@@ -23,20 +23,46 @@ void traverse_tree(Node *node, int is_left, FILE *file)
 
     if (node->type == OPERATOR)
     {
-        fprintf(file, "  ldr x0, =%s\n", node->left->value);
-        Node *tmp = node;
-        while (tmp->right->type == OPERATOR)
+        // fprintf(file, "  ldr x0, =%s\n", node->left->value);
+        // Node *tmp = node;
+        // while (tmp->right->type == OPERATOR)
+        // {
+        //     printf("DEBUG: %s\n", tmp->right->value);
+        //     char *oper = search(tmp->value[0])->data;
+        //     tmp = tmp->right;
+        //     fprintf(file, "  ldr x1, =%s\n", tmp->left->value);
+        //     fprintf(file, "  %s x0, x0, x1\n", oper);
+        // }
+        // fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
+        // fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
+        // node->left = NULL;
+        // node->right = NULL;
+        if (strcmp(node->value, "/") == 0)
         {
-            printf("DEBUG: %s\n", tmp->right->value);
-            char *oper = search(tmp->value[0])->data;
-            tmp = tmp->right;
-            fprintf(file, "  ldr x1, =%s\n", tmp->left->value);
-            fprintf(file, "  %s x0, x0, x1\n", oper);
+            fprintf(file, "  ldr x0, =%s\n", node->right->value);
+            fprintf(file, "  ldr x1, =%s\n", node->left->value);
+            fprintf(file, "  sdiv x0, x0, x1\n"); // Signed division for integers
+            // For floating-point division, use fdiv d0, d0, d1
+            node->left = NULL;
+            node->right = NULL;
         }
-        fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
-        fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
-        node->left = NULL;
-        node->right = NULL;
+        else
+        {
+            fprintf(file, "  ldr x0, =%s\n", node->left->value);
+            Node *tmp = node;
+            while (tmp->right->type == OPERATOR)
+            {
+                printf("DEBUG: Right child value: %s\n", tmp->right->value);
+                char *oper = search(tmp->value[0])->data; // Assuming 'search' returns ARM64 instructions
+                tmp = tmp->right;
+                fprintf(file, "  ldr x1, =%s\n", tmp->left->value);
+                fprintf(file, "  %s x0, x0, x1\n", oper);
+            }
+            fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
+            fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
+            node->left = NULL;
+            node->right = NULL;
+        }
     }
     if (node->type == INT)
     {
@@ -66,6 +92,8 @@ int generate_code(Node *root)
 {
     insert('-', "sub");
     insert('+', "add");
+    insert('*', "mul");
+    insert('/', "idiv");
     FILE *file = fopen("generated.asm", "w");
     assert(file != NULL && "FILE COULD NOT BE OPENED\n");
 
