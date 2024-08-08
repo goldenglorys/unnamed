@@ -36,4 +36,5 @@ Join me on this wild ride as I attempt to build a compiler from scratch. Here ar
 7. Implemented arithmetic operation (addition and subtraction) into the codegen..
 8. Update codegen to handle multiple operations all at once..
 9. Multiplication working in codegen..
+10. Multiple operations without the order of operation..working on variables and all..
 9. ... (more steps to come)
