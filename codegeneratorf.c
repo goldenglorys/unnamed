@@ -8,7 +8,52 @@
 #include "parserf.h"
 #include "./hashmap/hashmap.h"
 
-void traverse_tree(Node *node, int is_left, FILE *file)
+Node *generate_operator_code(Node *node, int syscall_number, FILE *file)
+{
+    Node *tmp = node;
+    fprintf(file, "  ldr x0, =%s\n", node->left->value);
+    int did_loop = 0;
+    while (tmp->right->type == OPERATOR)
+    {
+        did_loop = 1;
+        char *oper = search(tmp->value[0])->data; // Assuming 'search' returns ARM64 instructions
+        tmp = tmp->right;
+        fprintf(file, "  ldr x1, =%s\n", tmp->left->value);
+        if (strcmp(oper, "mul") == 0 || strcmp(oper, "sdiv") == 0)
+        {
+            fprintf(file, "  %s x0, x0, x1\n", oper);
+        }
+        else
+        {
+            fprintf(file, "  %s x0, x0, x1\n", oper);
+        }
+    }
+    if (did_loop)
+    {
+        if (tmp->value[0] == '*' || tmp->value[0] == '/')
+        {
+            fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
+            fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
+        }
+        else
+        {
+            fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
+            fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
+        }
+    }
+    else
+    {
+        fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
+        fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
+    }
+
+    fprintf(file, "  mov x16, %d\n", syscall_number); // Syscall number in x16
+    node->left = NULL;
+    node->right = NULL;
+    return node;
+}
+
+void traverse_tree(Node *node, int is_left, FILE *file, int syscall_number)
 {
     if (node == NULL)
     {
@@ -17,52 +62,40 @@ void traverse_tree(Node *node, int is_left, FILE *file)
 
     if (strcmp(node->value, "EXIT") == 0)
     {
+        syscall_number = 60;
         // Set up for exit system call
-        fprintf(file, "    mov x16, #0x1\n"); // Exit syscall number for ARM
+        // fprintf(file, "    mov x16, #0x1\n"); // Exit syscall number for ARM
     }
 
     if (node->type == OPERATOR)
     {
-        // fprintf(file, "  ldr x0, =%s\n", node->left->value);
-        // Node *tmp = node;
-        // while (tmp->right->type == OPERATOR)
+        // if (strcmp(node->value, "/") == 0)
         // {
-        //     printf("DEBUG: %s\n", tmp->right->value);
-        //     char *oper = search(tmp->value[0])->data;
-        //     tmp = tmp->right;
-        //     fprintf(file, "  ldr x1, =%s\n", tmp->left->value);
-        //     fprintf(file, "  %s x0, x0, x1\n", oper);
+        //     fprintf(file, "  ldr x0, =%s\n", node->right->value);
+        //     fprintf(file, "  ldr x1, =%s\n", node->left->value);
+        //     fprintf(file, "  sdiv x0, x0, x1\n"); // Signed division for integers
+        //     // For floating-point division, use fdiv d0, d0, d1
+        //     node->left = NULL;
+        //     node->right = NULL;
         // }
-        // fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
-        // fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
-        // node->left = NULL;
-        // node->right = NULL;
-        if (strcmp(node->value, "/") == 0)
-        {
-            fprintf(file, "  ldr x0, =%s\n", node->right->value);
-            fprintf(file, "  ldr x1, =%s\n", node->left->value);
-            fprintf(file, "  sdiv x0, x0, x1\n"); // Signed division for integers
-            // For floating-point division, use fdiv d0, d0, d1
-            node->left = NULL;
-            node->right = NULL;
-        }
-        else
-        {
-            fprintf(file, "  ldr x0, =%s\n", node->left->value);
-            Node *tmp = node;
-            while (tmp->right->type == OPERATOR)
-            {
-                printf("DEBUG: Right child value: %s\n", tmp->right->value);
-                char *oper = search(tmp->value[0])->data; // Assuming 'search' returns ARM64 instructions
-                tmp = tmp->right;
-                fprintf(file, "  ldr x1, =%s\n", tmp->left->value);
-                fprintf(file, "  %s x0, x0, x1\n", oper);
-            }
-            fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
-            fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
-            node->left = NULL;
-            node->right = NULL;
-        }
+        // else
+        // {
+        //     fprintf(file, "  ldr x0, =%s\n", node->left->value);
+        //     Node *tmp = node;
+        //     while (tmp->right->type == OPERATOR)
+        //     {
+        //         printf("DEBUG: Right child value: %s\n", tmp->right->value);
+        //         char *oper = search(tmp->value[0])->data; // Assuming 'search' returns ARM64 instructions
+        //         tmp = tmp->right;
+        //         fprintf(file, "  ldr x1, =%s\n", tmp->left->value);
+        //         fprintf(file, "  %s x0, x0, x1\n", oper);
+        //     }
+        //     fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
+        //     fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
+        //     node->left = NULL;
+        //     node->right = NULL;
+        // }
+        generate_operator_code(node, syscall_number, file);
     }
     if (node->type == INT)
     {
@@ -84,8 +117,8 @@ void traverse_tree(Node *node, int is_left, FILE *file)
     printf("\n");
 
     // Recursive calls to traverse through the tree
-    traverse_tree(node->left, 1, file);
-    traverse_tree(node->right, 0, file);
+    traverse_tree(node->left, 1, file, syscall_number);
+    traverse_tree(node->right, 0, file, syscall_number);
 }
 
 int generate_code(Node *root)
@@ -93,7 +126,7 @@ int generate_code(Node *root)
     insert('-', "sub");
     insert('+', "add");
     insert('*', "mul");
-    insert('/', "idiv");
+    insert('/', "div");
     FILE *file = fopen("generated.asm", "w");
     assert(file != NULL && "FILE COULD NOT BE OPENED\n");
 
@@ -104,7 +137,7 @@ int generate_code(Node *root)
     fprintf(file, "_main:\n");
 
     // Traverse the tree to generate the assembly code
-    traverse_tree(root, 0, file);
+    traverse_tree(root, 0, file, 0);
 
     // Call _exit at the end of the program
     fprintf(file, "    bl _exit\n");

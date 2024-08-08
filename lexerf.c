@@ -11,6 +11,7 @@ typedef enum
     KEYWORD,
     SEPARATOR,
     OPERATOR,
+    IDENTIFIER,
     END_OF_TOKENS,
 } TokenType;
 
@@ -47,6 +48,9 @@ void print_token(Token token)
         break;
     case OPERATOR:
         printf(" TOKEN TYPE: OPERATOR\n");
+        break;
+    case IDENTIFIER:
+        printf(" TOKEN TYPE: IDENTIFIER\n");
         break;
     case END_OF_TOKENS:
         printf(" END OF TOKENS\n");
@@ -91,7 +95,7 @@ Token *generate_number(char *current, int *current_index)
  * @return A pointer to the generated keyword token.
  */
 
-Token *generate_keyword(char *current, int *current_index)
+Token *generate_keyword_or_identifier(char *current, int *current_index)
 {
     Token *token = malloc(sizeof(Token));
     char *keyword = malloc(sizeof(char) * 8);
@@ -107,6 +111,16 @@ Token *generate_keyword(char *current, int *current_index)
     {
         token->type = KEYWORD;
         token->value = "EXIT";
+    }
+    else if (strcmp(keyword, "int") == 0)
+    {
+        token->type = KEYWORD;
+        token->value = "INT";
+    }
+    else
+    {
+        token->type = IDENTIFIER;
+        token->value = keyword;
     }
     return token;
 }
@@ -183,7 +197,7 @@ Token *lexer(FILE *file)
         }
         else if (isalpha(current[current_index]))
         {
-            token = generate_keyword(current, &current_index);
+            token = generate_keyword_or_identifier(current, &current_index);
             tokens[tokens_index] = *token;
             tokens_index++;
             current_index--;
