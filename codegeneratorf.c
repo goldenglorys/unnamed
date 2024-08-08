@@ -16,7 +16,7 @@ Node *generate_operator_code(Node *node, int syscall_number, FILE *file)
     while (tmp->right->type == OPERATOR)
     {
         did_loop = 1;
-        char *oper = search(tmp->value[0])->data; // Assuming 'search' returns ARM64 instructions
+        char *oper = search(tmp->value[0])->data;
         tmp = tmp->right;
         fprintf(file, "  ldr x1, =%s\n", tmp->left->value);
         if (strcmp(oper, "mul") == 0 || strcmp(oper, "sdiv") == 0)
@@ -63,38 +63,11 @@ void traverse_tree(Node *node, int is_left, FILE *file, int syscall_number)
     if (strcmp(node->value, "EXIT") == 0)
     {
         syscall_number = 60;
-        // Set up for exit system call
-        // fprintf(file, "    mov x16, #0x1\n"); // Exit syscall number for ARM
     }
 
     if (node->type == OPERATOR)
     {
-        // if (strcmp(node->value, "/") == 0)
-        // {
-        //     fprintf(file, "  ldr x0, =%s\n", node->right->value);
-        //     fprintf(file, "  ldr x1, =%s\n", node->left->value);
-        //     fprintf(file, "  sdiv x0, x0, x1\n"); // Signed division for integers
-        //     // For floating-point division, use fdiv d0, d0, d1
-        //     node->left = NULL;
-        //     node->right = NULL;
-        // }
-        // else
-        // {
-        //     fprintf(file, "  ldr x0, =%s\n", node->left->value);
-        //     Node *tmp = node;
-        //     while (tmp->right->type == OPERATOR)
-        //     {
-        //         printf("DEBUG: Right child value: %s\n", tmp->right->value);
-        //         char *oper = search(tmp->value[0])->data; // Assuming 'search' returns ARM64 instructions
-        //         tmp = tmp->right;
-        //         fprintf(file, "  ldr x1, =%s\n", tmp->left->value);
-        //         fprintf(file, "  %s x0, x0, x1\n", oper);
-        //     }
-        //     fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
-        //     fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
-        //     node->left = NULL;
-        //     node->right = NULL;
-        // }
+
         generate_operator_code(node, syscall_number, file);
     }
     if (node->type == INT)
