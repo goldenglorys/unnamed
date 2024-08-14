@@ -98,30 +98,55 @@ Token *generate_number(char *current, int *current_index)
 Token *generate_keyword_or_identifier(char *current, int *current_index)
 {
     Token *token = malloc(sizeof(Token));
-    char *keyword = malloc(sizeof(char) * 8);
+    if (!token)
+        return NULL;
+
+    int buffer_size = 8;
+    char *keyword = malloc(sizeof(char) * buffer_size);
+    if (!keyword)
+        return NULL;
+
     int keyword_index = 0;
+
     while (isalpha(current[*current_index]) && current[*current_index] != '\0')
     {
+        if (keyword_index >= buffer_size - 1)
+        {
+            buffer_size *= 2;
+            char *new_keyword = realloc(keyword, sizeof(char) * buffer_size);
+            if (!new_keyword)
+            {
+                free(keyword);
+                return NULL;
+            }
+            keyword = new_keyword;
+        }
+
         keyword[keyword_index] = current[*current_index];
         keyword_index++;
         *current_index += 1;
     }
+
     keyword[keyword_index] = '\0';
+
     if (strcmp(keyword, "exit") == 0)
     {
         token->type = KEYWORD;
         token->value = "EXIT";
+        free(keyword);
     }
     else if (strcmp(keyword, "int") == 0)
     {
         token->type = KEYWORD;
         token->value = "INT";
+        free(keyword);
     }
     else
     {
         token->type = IDENTIFIER;
         token->value = keyword;
     }
+
     return token;
 }
 
