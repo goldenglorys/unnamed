@@ -10,46 +10,93 @@
 
 Node *generate_operator_code(Node *node, int syscall_number, FILE *file)
 {
-    Node *tmp = node;
-    fprintf(file, "  ldr x0, =%s\n", node->left->value);
-    int did_loop = 0;
-    while (tmp->right->type == OPERATOR)
+    if (node == NULL)
     {
-        did_loop = 1;
-        char *oper = search(tmp->value[0])->data;
-        tmp = tmp->right;
-        fprintf(file, "  ldr x1, =%s\n", tmp->left->value);
-        if (strcmp(oper, "mul") == 0 || strcmp(oper, "sdiv") == 0)
-        {
-            fprintf(file, "  %s x0, x0, x1\n", oper);
-        }
-        else
-        {
-            fprintf(file, "  %s x0, x0, x1\n", oper);
-        }
+        fprintf(stderr, "generate_operator_code: node is NULL\n");
+        return NULL;
     }
-    if (did_loop)
+
+    if (strcmp(node->value, "=") == 0)
     {
-        if (tmp->value[0] == '*' || tmp->value[0] == '/')
+        if (node->right == NULL)
         {
-            fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
-            fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
+            fprintf(stderr, "generate_operator_code: node->right is NULL\n");
+            return node;
         }
-        else
-        {
-            fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
-            fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
-        }
+
+        fprintf(file, "  ldr x0, =x\n");                      // Load the address of x into x0
+        fprintf(file, "  ldr x1, =%s\n", node->right->value); // Load the value of the right operand into x1
+        fprintf(file, "  str x1, [x0]\n");                    // Store the value in x1 to the address in x0
+        printf("EQUALS\n");
     }
     else
     {
-        fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
-        fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
+        Node *tmp = node;
+        fprintf(file, "  ldr x0, =x\n");   // Load the address of x into x0
+        fprintf(file, "  ldr x0, [x0]\n"); // Load the value at the address in x0 into x0
+        int did_loop = 0;
+        while (tmp->right != NULL && tmp->right->type == OPERATOR)
+        {
+            did_loop = 1;
+            char *oper = search(tmp->value[0])->data;
+            tmp = tmp->right;
+            if (tmp->left == NULL)
+            {
+                fprintf(stderr, "generate_operator_code: tmp->left is NULL\n");
+                return node;
+            }
+            fprintf(file, "  ldr x1, =%s\n", tmp->left->value);
+            if (strcmp(oper, "mul") == 0 || strcmp(oper, "div") == 0)
+            {
+                fprintf(file, "  %s x0, x0, x1\n", oper);
+                fprintf(file, "  mov x8, x0\n");
+            }
+            else
+            {
+                fprintf(file, "  %s x0, x0, x1\n", oper);
+                fprintf(file, "  mov x8, x0\n");
+            }
+        }
+        if (did_loop)
+        {
+            if (tmp->value[0] == '*' || tmp->value[0] == '/')
+            {
+                fprintf(file, "  mov x0, x8\n");
+                if (tmp->right == NULL)
+                {
+                    fprintf(stderr, "generate_operator_code: tmp->right is NULL\n");
+                    return node;
+                }
+                fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
+                fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
+                fprintf(file, "  mov x8, x0\n");
+            }
+            else
+            {
+                if (tmp->right == NULL)
+                {
+                    fprintf(stderr, "generate_operator_code: tmp->right is NULL\n");
+                    return node;
+                }
+                fprintf(file, "  %s x8, x8, %s\n", search(tmp->value[0])->data, tmp->right->value);
+            }
+        }
+        else
+        {
+            if (tmp->right == NULL)
+            {
+                fprintf(stderr, "generate_operator_code: tmp->right is NULL\n");
+                return node;
+            }
+            fprintf(file, "  ldr x1, =%s\n", tmp->right->value);
+            fprintf(file, "  %s x0, x0, x1\n", search(tmp->value[0])->data);
+            fprintf(file, "  mov x8, x0\n");
+        }
+        fprintf(file, "  mov x0, %d\n", syscall_number);
+        fprintf(file, "  svc #0\n");
+        node->left = NULL;
+        node->right = NULL;
     }
-
-    fprintf(file, "  mov x16, %d\n", syscall_number); // Syscall number in x16
-    node->left = NULL;
-    node->right = NULL;
     return node;
 }
 
@@ -59,37 +106,35 @@ void traverse_tree(Node *node, int is_left, FILE *file, int syscall_number)
     {
         return;
     }
-
     if (strcmp(node->value, "EXIT") == 0)
     {
-        syscall_number = 60;
+        syscall_number = 93;
     }
-
     if (node->type == OPERATOR)
     {
-
         generate_operator_code(node, syscall_number, file);
+        printf("OPERATOR ERRORS\n");
     }
     if (node->type == INT)
     {
-        // Move integer value into x0 for the syscall
+        fprintf(file, "    mov x8, %d\n", syscall_number);
         fprintf(file, "    mov x0, %s\n", node->value);
-    }
-
-    if (strcmp(node->value, ";") == 0)
-    {
-        // Invoke the syscall
         fprintf(file, "    svc #0x80\n");
     }
-
-    // Print the value for debugging, if necessary
+    if (node->type == IDENTIFIER)
+    {
+        if (syscall_number == 93)
+        {
+            fprintf(file, "    mov x8, %d\n", syscall_number);
+            fprintf(file, "    ldr x8, [sp], #8\n");
+            fprintf(file, "    svc #0x80\n");
+        }
+    }
     for (size_t i = 0; node->value[i] != '\0'; i++)
     {
         printf("%c", node->value[i]);
     }
     printf("\n");
-
-    // Recursive calls to traverse through the tree
     traverse_tree(node->left, 1, file, syscall_number);
     traverse_tree(node->right, 0, file, syscall_number);
 }
@@ -107,6 +152,8 @@ int generate_code(Node *root)
     fprintf(file, ".section __TEXT,__text\n");
     fprintf(file, ".global _main\n");
     fprintf(file, ".extern _exit\n\n");
+    fprintf(file, ".data\n");
+    fprintf(file, "x: .quad 0\n");
     fprintf(file, "_main:\n");
 
     // Traverse the tree to generate the assembly code

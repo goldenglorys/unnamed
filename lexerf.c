@@ -167,7 +167,7 @@ Token *lexer(FILE *file)
     Token *tokens = malloc(sizeof(Token) * number_of_tokens);
     int tokens_index = 0;
 
-    while (current_index < length && current[current_index] != '\0')
+    while (current[current_index] != '\0')
     {
         Token *token = malloc(sizeof(Token));
         tokens_size++;
@@ -176,13 +176,13 @@ Token *lexer(FILE *file)
             number_of_tokens *= 1.5;
             tokens = realloc(tokens, sizeof(Token) * number_of_tokens);
         }
-        if (current[current_index] == ';' || current[current_index] == '(' || current[current_index] == ')' || current[current_index] == '{' || current[current_index] == '}' || current[current_index] == '=' || current[current_index] == '"')
+        if (current[current_index] == ';' || current[current_index] == '(' || current[current_index] == ')' || current[current_index] == '{' || current[current_index] == '}' || current[current_index] == '"')
         {
             token = generate_separator_or_operator(current, &current_index, SEPARATOR);
             tokens[tokens_index] = *token;
             tokens_index++;
         }
-        else if (current[current_index] == '+' || current[current_index] == '-' || current[current_index] == '*' || current[current_index] == '/' || current[current_index] == '%')
+        else if (current[current_index] == '+' || current[current_index] == '-' || current[current_index] == '*' || current[current_index] == '/' || current[current_index] == '%' || current[current_index] == '=')
         {
             token = generate_separator_or_operator(current, &current_index, OPERATOR);
             tokens[tokens_index] = *token;
