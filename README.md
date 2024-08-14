@@ -38,4 +38,5 @@ Join me on this wild ride as I attempt to build a compiler from scratch. Here ar
 9. Multiplication working in codegen..
 10. Multiple operations without the order of operation..working on variables and all..
 11. variables and scoping..
+12. Optimized operators code..moving to if statements..
 9. ... (more steps to come)
