@@ -1,10 +1,2 @@
-{
-  int scopeOne = 12;
-  int newScope = 11;
-  int scopeThree = 12;
-}
-
-int x = 10;
-int y = 3;
-int hal = 2;
-exit(newScope);
+int x = 101;
+exit(x);
