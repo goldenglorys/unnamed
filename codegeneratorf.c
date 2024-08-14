@@ -18,6 +18,15 @@ size_t current_stack_size[MAX_STACK_SIZE_SIZE];
 const unsigned initial_size = 100;
 struct hashmap_s hashmap;
 
+typedef enum
+{
+    ADD,
+    SUB,
+    DIV,
+    MUL,
+    NOT_OPERATOR
+} OperatorType;
+
 void stack_push(size_t value)
 {
     printf("current stack: %zu\n", current_stack_size[current_stack_size_size]);
@@ -173,176 +182,112 @@ Node *handle_div(Node *tmp, FILE *file)
     return tmp;
 }
 
-Node *generate_operator_code(Node *node, FILE *file)
+OperatorType check_operator(Node *node)
 {
-    Node *tmp = node;
-    if (tmp->left->type == INT)
+    if (node->type != OPERATOR)
     {
-        fprintf(file, "  mov x0, #%s\n", tmp->left->value);
+        return NOT_OPERATOR;
     }
-    else if (tmp->left->type == IDENTIFIER)
+
+    if (strcmp(node->value, "+") == 0)
     {
-        int *element = hashmap_get(&hashmap, tmp->left->value, strlen(tmp->left->value));
-        if (element == NULL)
+        return ADD;
+    }
+    if (strcmp(node->value, "-") == 0)
+    {
+        return SUB;
+    }
+    if (strcmp(node->value, "/") == 0)
+    {
+        return DIV;
+    }
+    if (strcmp(node->value, "*") == 0)
+    {
+        return MUL;
+    }
+    return NOT_OPERATOR;
+}
+
+int mov_if_var_or_not(char *reg, Node *node, FILE *file)
+{
+    if (node->type == IDENTIFIER)
+    {
+        int *value = malloc(sizeof(int));
+        value = hashmap_get(&hashmap, node->value, strlen(node->value));
+        if (value == NULL)
         {
-            printf("ERROR: Not in hashmap!\n");
+            printf("ERROR: Variable %s not declared in current scope\n", node->value);
             exit(1);
         }
-        push_var(*element, file);
+        push_var(*value, file);
+        pop(reg, file);
+        return 0;
+    }
+    if (node->type == INT)
+    {
+        fprintf(file, "  mov %s, %s\n", reg, node->value);
+        return 0;
+    }
+    return -1;
+}
+
+Node *generate_operator_code(Node *node, FILE *file)
+{
+    mov_if_var_or_not("x0", node->left, file);
+    push("x0", file);
+    Node *tmp = node;
+    OperatorType oper_type = check_operator(tmp);
+    while (tmp->type == OPERATOR)
+    {
         pop("x0", file);
+        oper_type = check_operator(tmp);
+        tmp = tmp->right;
+        if (tmp->type != OPERATOR)
+        {
+            break;
+        }
+        mov_if_var_or_not("x1", tmp->left, file);
+        switch (oper_type)
+        {
+        case ADD:
+            fprintf(file, "  add x0, x0, x1\n");
+            break;
+        case SUB:
+            fprintf(file, "  sub x0, x0, x1\n");
+            break;
+        case DIV:
+            fprintf(file, "  udiv x0, x0, x1\n");
+            break;
+        case MUL:
+            fprintf(file, "  mul x0, x0, x1\n");
+            break;
+        case NOT_OPERATOR:
+            printf("ERROR: Invalid Syntax\n");
+            exit(1);
+        }
+        push("x0", file);
+        oper_type = check_operator(tmp);
+    }
+    mov_if_var_or_not("x1", tmp, file);
+    switch (oper_type)
+    {
+    case ADD:
+        fprintf(file, "  add x0, x0, x1\n");
+        break;
+    case SUB:
+        fprintf(file, "  sub x0, x0, x1\n");
+        break;
+    case DIV:
+        fprintf(file, "  udiv x0, x0, x1\n");
+        break;
+    case MUL:
+        fprintf(file, "  mul x0, x0, x1\n");
+        break;
+    case NOT_OPERATOR:
+        printf("ERROR: Invalid Syntax\n");
+        exit(1);
     }
     push("x0", file);
-    int did_loop = 0;
-    while (tmp->right->type == OPERATOR)
-    {
-        did_loop = 1;
-        char oper = tmp->value[0];
-        if (oper == '+')
-        {
-            tmp = handle_adding(tmp, file);
-        }
-        else if (oper == '-')
-        {
-            tmp = handle_subbing(tmp, file);
-        }
-        else if (oper == '*')
-        {
-            tmp = handle_mul(tmp, file);
-        }
-        else if (oper == '/')
-        {
-            tmp = handle_div(tmp, file);
-        }
-    }
-    if (did_loop)
-    {
-        if (tmp->value[0] == '*' || tmp->value[0] == '/')
-        {
-            pop("x0", file);
-            if (tmp->right->type == INT)
-            {
-                fprintf(file, "  mov x1, #%s\n", tmp->right->value);
-            }
-            else if (tmp->right->type == IDENTIFIER)
-            {
-                int *element = hashmap_get(&hashmap, tmp->right->value, strlen(tmp->right->value));
-                if (element == NULL)
-                {
-                    printf("ERROR: Not in hashmap!\n");
-                    exit(1);
-                }
-                push_var(*element, file);
-                pop("x1", file);
-            }
-            fprintf(file, "  %s x0, x0, x1\n", tmp->value[0] == '*' ? "mul" : "udiv");
-            push("x0", file);
-        }
-        else
-        {
-            pop("x0", file);
-            if (tmp->right->type == INT)
-            {
-                fprintf(file, "  mov x1, #%s\n", tmp->right->value);
-            }
-            else if (tmp->right->type == IDENTIFIER)
-            {
-                int *element = hashmap_get(&hashmap, tmp->right->value, strlen(tmp->right->value));
-                if (element == NULL)
-                {
-                    printf("ERROR: Not in hashmap!\n");
-                    exit(1);
-                }
-                push_var(*element, file);
-                pop("x1", file);
-            }
-            fprintf(file, "  %s x0, x0, x1\n", tmp->value[0] == '+' ? "add" : "sub");
-            push("x0", file);
-        }
-    }
-    else
-    {
-        if (tmp->value[0] == '-')
-        {
-            if (tmp->right->type == INT)
-            {
-                fprintf(file, "  mov x1, #%s\n", tmp->right->value);
-            }
-            else if (tmp->right->type == IDENTIFIER)
-            {
-                int *element = hashmap_get(&hashmap, tmp->right->value, strlen(tmp->right->value));
-                if (element == NULL)
-                {
-                    printf("ERROR: Not in hashmap!\n");
-                    exit(1);
-                }
-                push_var(*element, file);
-                pop("x1", file);
-            }
-            pop("x0", file);
-            fprintf(file, "  sub x0, x0, x1\n");
-            push("x0", file);
-        }
-        else if (tmp->value[0] == '+')
-        {
-            if (tmp->right->type == INT)
-            {
-                fprintf(file, "  mov x1, #%s\n", tmp->right->value);
-            }
-            else if (tmp->right->type == IDENTIFIER)
-            {
-                int *element = hashmap_get(&hashmap, tmp->right->value, strlen(tmp->right->value));
-                if (element == NULL)
-                {
-                    printf("ERROR: Not in hashmap!\n");
-                    exit(1);
-                }
-                push_var(*element, file);
-                pop("x1", file);
-            }
-            fprintf(file, "  add x0, x0, x1\n");
-            push("x0", file);
-        }
-        else if (tmp->value[0] == '*')
-        {
-            if (tmp->right->type == INT)
-            {
-                fprintf(file, "  mov x1, #%s\n", tmp->right->value);
-            }
-            else if (tmp->right->type == IDENTIFIER)
-            {
-                int *element = hashmap_get(&hashmap, tmp->right->value, strlen(tmp->right->value));
-                if (element == NULL)
-                {
-                    printf("ERROR: Not in hashmap!\n");
-                    exit(1);
-                }
-                push_var(*element, file);
-                pop("x1", file);
-            }
-            fprintf(file, "  mul x0, x0, x1\n");
-            push("x0", file);
-        }
-        else if (tmp->value[0] == '/')
-        {
-            if (tmp->right->type == INT)
-            {
-                fprintf(file, "  mov x1, #%s\n", tmp->right->value);
-            }
-            else if (tmp->right->type == IDENTIFIER)
-            {
-                int *element = hashmap_get(&hashmap, tmp->right->value, strlen(tmp->right->value));
-                if (element == NULL)
-                {
-                    printf("ERROR: Not in hashmap!\n");
-                    exit(1);
-                }
-                push_var(*element, file);
-                pop("x1", file);
-            }
-            fprintf(file, "  udiv x0, x0, x1\n");
-            push("x0", file);
-        }
-    }
     node->left = NULL;
     node->right = NULL;
     return node;
