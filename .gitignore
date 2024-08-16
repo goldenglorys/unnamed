@@ -7,3 +7,4 @@ generated
 main
 build/
 HelloWorld
+.DS_Store

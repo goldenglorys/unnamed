@@ -141,6 +141,12 @@ Token *generate_keyword_or_identifier(char *current, int *current_index)
         token->value = "INT";
         free(keyword);
     }
+    else if (strcmp(keyword, "if") == 0)
+    {
+        token->type = KEYWORD;
+        token->value = "IF";
+        free(keyword);
+    }
     else
     {
         token->type = IDENTIFIER;

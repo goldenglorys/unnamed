@@ -14,6 +14,7 @@
 
 size_t stack_size = 0;
 int current_stack_size_size = 0;
+int label_number = 0;
 size_t current_stack_size[MAX_STACK_SIZE_SIZE];
 const unsigned initial_size = 100;
 struct hashmap_s hashmap;
@@ -26,6 +27,12 @@ typedef enum
     MUL,
     NOT_OPERATOR
 } OperatorType;
+
+void create_label(FILE *file)
+{
+    fprintf(file, ".L%d:\n", label_number);
+    label_number++;
+}
 
 void stack_push(size_t value)
 {
@@ -83,103 +90,6 @@ void pop(char *reg, FILE *file)
 void mov(char *reg1, char *reg2, FILE *file)
 {
     fprintf(file, "  mov %s, %s\n", reg1, reg2);
-}
-
-Node *handle_adding(Node *tmp, FILE *file)
-{
-    pop("x0", file);
-    tmp = tmp->right;
-    if (tmp->left->type == INT)
-    {
-        fprintf(file, "  mov x1, #%s\n", tmp->left->value);
-    }
-    else if (tmp->left->type == IDENTIFIER)
-    {
-        int *element = hashmap_get(&hashmap, tmp->left->value, strlen(tmp->left->value));
-        if (element == NULL)
-        {
-            printf("ERROR: Not in hashmap!\n");
-            exit(1);
-        }
-        push_var(*element, file);
-        pop("x1", file);
-    }
-
-    fprintf(file, "  add x0, x0, x1\n");
-    push("x0", file);
-    return tmp;
-}
-
-Node *handle_subbing(Node *tmp, FILE *file)
-{
-    pop("x0", file);
-    tmp = tmp->right;
-    if (tmp->left->type == INT)
-    {
-        fprintf(file, "  mov x1, #%s\n", tmp->left->value);
-    }
-    else if (tmp->left->type == IDENTIFIER)
-    {
-        int *element = hashmap_get(&hashmap, tmp->left->value, strlen(tmp->left->value));
-        if (element == NULL)
-        {
-            printf("ERROR: Not in hashmap!\n");
-            exit(1);
-        }
-        push_var(*element, file);
-        pop("x1", file);
-    }
-    fprintf(file, "  sub x0, x0, x1\n");
-    push("x0", file);
-    return tmp;
-}
-
-Node *handle_mul(Node *tmp, FILE *file)
-{
-    pop("x0", file);
-    tmp = tmp->right;
-    if (tmp->left->type == INT)
-    {
-        fprintf(file, "  mov x1, #%s\n", tmp->left->value);
-    }
-    else if (tmp->left->type == IDENTIFIER)
-    {
-        int *element = hashmap_get(&hashmap, tmp->left->value, strlen(tmp->left->value));
-        if (element == NULL)
-        {
-            printf("ERROR: Not in hashmap!\n");
-            exit(1);
-        }
-        push_var(*element, file);
-        pop("x1", file);
-    }
-    fprintf(file, "  mul x0, x0, x1\n");
-    push("x0", file);
-    return tmp;
-}
-
-Node *handle_div(Node *tmp, FILE *file)
-{
-    pop("x0", file);
-    tmp = tmp->right;
-    if (tmp->left->type == INT)
-    {
-        fprintf(file, "  mov x1, #%s\n", tmp->left->value);
-    }
-    else if (tmp->left->type == IDENTIFIER)
-    {
-        int *element = hashmap_get(&hashmap, tmp->left->value, strlen(tmp->left->value));
-        if (element == NULL)
-        {
-            printf("ERROR: Not in hashmap!\n");
-            exit(1);
-        }
-        push_var(*element, file);
-        pop("x1", file);
-    }
-    fprintf(file, "  udiv x0, x0, x1\n");
-    push("x0", file);
-    return tmp;
 }
 
 OperatorType check_operator(Node *node)
@@ -344,6 +254,127 @@ void traverse_tree(Node *node, int is_left, FILE *file, int syscall_number)
         }
         node->left = NULL;
     }
+    // if (strcmp(node->value, "IF") == 0)
+    // {
+    //     Node *current = malloc(sizeof(Node));
+    //     current = node->left->left;
+    //     printf("MADE IT HERE IF\n");
+
+    //     if (current->left->type == INT || current->left->type == IDENTIFIER)
+    //     {
+    //         mov_if_var_or_not("x0", current->left, file);
+    //         push("x0", file);
+    //     }
+    //     else
+    //     {
+    //         generate_operator_code(current->left, file);
+    //     }
+
+    //     printf("MADE IT HERE IF\n");
+
+    //     if (current->right->type == INT || current->right->type == IDENTIFIER)
+    //     {
+    //         mov_if_var_or_not("x1", current->right, file);
+    //         push("x1", file);
+    //     }
+    //     else
+    //     {
+    //         generate_operator_code(current->right, file);
+    //     }
+
+    //     pop("x1", file);
+    //     pop("x0", file);
+    //     fprintf(file, "  cmp x0, x1\n");
+    //     fprintf(file, "  b.ne 1f\n");
+    //     fprintf(file, "  // IF body goes here\n");
+    //     fprintf(file, "  b 2f\n");
+    //     fprintf(file, "1:\n");
+    //     fprintf(file, "  // ELSE body goes here (if any)\n");
+    //     fprintf(file, "2:\n");
+    //     node->left->left = NULL;
+    // }
+
+    if (strcmp(node->value, "IF") == 0)
+    {
+        Node *current = node->left->left;
+        printf("MADE IT HERE IF\n");
+
+        if (current->left->type == INT || current->left->type == IDENTIFIER)
+        {
+            mov_if_var_or_not("x0", current->left, file);
+            push("x0", file);
+        }
+        else
+        {
+            generate_operator_code(current->left, file);
+        }
+
+        printf("MADE IT HERE IF\n");
+
+        if (current->right->type == INT || current->right->type == IDENTIFIER)
+        {
+            mov_if_var_or_not("x1", current->right, file);
+            push("x1", file);
+        }
+        else
+        {
+            generate_operator_code(current->right, file);
+        }
+
+        pop("x1", file);
+        pop("x0", file);
+
+        // Generate unique labels for each IF statement
+        int if_label = label_number++;
+        int else_label = label_number++;
+        int end_label = label_number++;
+
+        // Handle different comparison operators
+        if (strcmp(current->value, "==") == 0)
+        {
+            fprintf(file, "  cmp x0, x1\n");
+            fprintf(file, "  b.ne .L%d\n", else_label);
+        }
+        else if (strcmp(current->value, "!=") == 0)
+        {
+            fprintf(file, "  cmp x0, x1\n");
+            fprintf(file, "  b.eq .L%d\n", else_label);
+        }
+        else if (strcmp(current->value, "<") == 0)
+        {
+            fprintf(file, "  cmp x0, x1\n");
+            fprintf(file, "  b.ge .L%d\n", else_label);
+        }
+        else if (strcmp(current->value, ">") == 0)
+        {
+            fprintf(file, "  cmp x0, x1\n");
+            fprintf(file, "  b.le .L%d\n", else_label);
+        }
+        else if (strcmp(current->value, "<=") == 0)
+        {
+            fprintf(file, "  cmp x0, x1\n");
+            fprintf(file, "  b.gt .L%d\n", else_label);
+        }
+        else if (strcmp(current->value, ">=") == 0)
+        {
+            fprintf(file, "  cmp x0, x1\n");
+            fprintf(file, "  b.lt .L%d\n", else_label);
+        }
+        else
+        {
+            printf("ERROR: Unsupported comparison operator\n");
+            exit(1);
+        }
+
+        fprintf(file, "  // IF body goes here\n");
+        fprintf(file, "  b .L%d\n", end_label);
+        fprintf(file, ".L%d:\n", else_label);
+        fprintf(file, "  // ELSE body goes here (if any)\n");
+        fprintf(file, ".L%d:\n", end_label);
+
+        node->left->left = NULL;
+    }
+
     if (strcmp(node->value, "(") == 0)
     {
     }
@@ -432,6 +463,7 @@ void traverse_tree(Node *node, int is_left, FILE *file, int syscall_number)
 
     if (strcmp(node->value, "}") == 0)
     {
+        create_label(file);
         void *log = malloc(sizeof(char));
         if (hashmap_iterate_pairs(&hashmap, log_and_free_out_of_scope, (void *)log) != 0)
         {
